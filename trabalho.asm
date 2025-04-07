@@ -22,7 +22,7 @@ primeiro_input:
 		#################################################
 		# Imprime msg para digitar o número             #
 		#################################################
-		li a7, zero, 4			# Serviço 4 = impressão de string
+		li a7, 4			# Serviço 4 = impressão de string
 		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
 		ecall					# Syscall = sem retorno
 		
@@ -64,12 +64,6 @@ padrao_input:
 		li t0, 'f'				# O registrador temporário recebe o caracter 'f'
 		beq s0, t0, encerra			# Compara o caracter recebido com 'f', se for igual, avança para label 'encerra'
 		
-		#################################################
-		# Imprime msg para digitar um novo número       #
-		#################################################
-		li a7, 4				# Serviço 4 = impressão de string
-		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
-		ecall					# Syscall = sem retorno
 		#verifica se eh um caractere valido
 		verifica_op:
 		li t0, '+'
@@ -93,10 +87,12 @@ padrao_input:
 		j padrao_input
 
 op_valida:		
-		# Imprime msg para digitar o número
-		li a7, 4
-		la a0, prompt_num
-		ecall
+		#################################################
+		# Imprime msg para digitar um novo número       #
+		#################################################
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
+		ecall					# Syscall = sem retorno
 		
 		#################################################
 		# Recebe o segundo inteiro, o operando 2        #
