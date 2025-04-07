@@ -12,31 +12,41 @@ barra_n:	.asciz "\n"
 		
 main:
 primeiro_input:
-		# Imprime msg para digitar o número
-		li a7, 4
-		la a0, prompt_num
-		ecall
+		#################################################
+		# Imprime msg para digitar o número             #
+		#################################################
+		li a7, 4			# Serviço 4 = impressão de string
+		la a0, prompt_num		# a0 recebe o endereço da mensagem em que se pede de número
+		ecall				# Syscall = sem retorno
 		
-		# Input do primeiro número
-		li a7, 5
-		ecall
-		mv s1, a0 		# s1 = n1
+		#################################################
+		# Recebe o primeiro inteiro, o operando 1       #
+		#################################################
+		li a7, 5			# Serviço 5 = leitura de inteiro
+		ecall				# Syscall = retorna o inteiro em a0
+		add s1, a0, zero		# s1 recebe o conteúdo do inteiro recebido do usuário
 		
 padrao_input:
-		# Imprime msg para digitar a operação
-		li a7, 4
-		la a0, prompt_char	
-		ecall
+		#################################################
+		# Imprime msg para digitar a operação           #
+		#################################################
+		li a7, 4			# Serviço 4 = impressão de string
+		la a0, prompt_char		# a0 recebe o endereço da mensagem em que se pede a operação
+		ecall				# Syscall = sem retorno
 		
-		# Lê o char de operação
-		li a7, 12
-		ecall
-		mv s0, a0		# s0 = op
+		#################################################
+		# Lê o char de operação                         #
+		#################################################
+		li a7, 12			# Serviço ??
+		ecall				# Syscall = retorna o caracter em a0
+		add s0, a0, zero		# s0 recebe o conteúdo do caracter recebido do usuário
 		
-		# Imprime \n
-		li a7, 4
-		la a0, barra_n
-		ecall
+		#################################################
+		# Imprime o \n                                  #
+		#################################################
+		li a7, 4			# Serviço 4 = impressão de string
+		la a0, barra_n			# a0 recebe o endereço da mensagem que contém o \n
+		ecall				# Syscall = sem retorno
 		
 		# Checa se é necessário ler o segundo número e fazer uma operação aritmética para salva no novo_no
 		li t0, 'u'
