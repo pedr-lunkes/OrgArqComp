@@ -5,6 +5,7 @@ cabeca:		.word 0		# Cabeça da lista ligada de inteiros
 prompt_num: 	.asciz "Digite um número: "
 prompt_char: 	.asciz "Digite um caractere: "
 prompt_no_undo:	.asciz "Não há operações anteriores."
+prompt_invalid:	.asciz "Operação inválida."
 barra_n:	.asciz "\n"
 		.text
 		.align 2
@@ -54,6 +55,29 @@ padrao_input:
 		li t0, 'f'
 		beq s0, t0, encerra
 		
+		#verifica se eh um caractere valido
+		verifica_op:
+		li t0, '+'
+		beq s0, t0, op_valida
+		li t0, '-'
+		beq s0, t0, op_valida
+		li t0, '*'
+		beq s0, t0, op_valida
+		li t0, '/'
+		beq s0, t0, op_valida
+
+		# Se não for nenhuma das válidas, imprime mensagem e volta pro loop
+		li a7, 4
+		la a0, prompt_invalid
+		ecall
+
+		li a7, 4
+		la a0, barra_n
+		ecall
+	
+		j padrao_input
+
+op_valida:		
 		# Imprime msg para digitar o número
 		li a7, 4
 		la a0, prompt_num
@@ -111,6 +135,9 @@ operacao:
 		li t0, '/'
 		beq a0, t0, divisao
 		
+		# Se não achou a operação, é um caractere invalido
+		j caractere_invalido
+		
 		# Operações da função
 soma:		add a0, a1, a2	
 		j operacao_fim
@@ -118,7 +145,13 @@ subtracao:	sub a0, a1, a2
 		j operacao_fim
 multiplicacao:	mul a0, a1, a2	
 		j operacao_fim
-divisao:	div a0, a1, a2  
+divisao:		div a0, a1, a2
+		j operacao_fim
+		
+caractere_invalido:
+		li a7, 4
+		la a0, prompt_invalid
+		ecall
 
 operacao_fim:
 		# Printa o número na tela com \n e retorna
