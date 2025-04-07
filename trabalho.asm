@@ -8,6 +8,7 @@ cabeca:		.word 0					# Cabeça da lista ligada de inteiros
 prompt_num: 	.asciz "Digite um número: "		# Mensagem pedindo um número  
 prompt_char: 	.asciz "Digite um caractere: "		# Mensagem pedindo caracter
 prompt_no_undo:	.asciz "Não há operações anteriores."	# Mensagem de ausência de operações anteriores
+prompt_invalid:	.asciz "Operação inválida."
 barra_n:	.asciz "\n"				# Mensagem de \n
 		.text					# Receber inputs do usuário
 		.align 2				# Interpreta o(s) dado(s) na memória como word
@@ -16,6 +17,7 @@ barra_n:	.asciz "\n"				# Mensagem de \n
 							################################################
 main:							# INÍCIO DO PROGRAMA                           #
 							################################################
+
 primeiro_input:
 		#################################################
 		# Imprime msg para digitar o número             #
@@ -68,6 +70,33 @@ padrao_input:
 		li a7, 4				# Serviço 4 = impressão de string
 		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
 		ecall					# Syscall = sem retorno
+		#verifica se eh um caractere valido
+		verifica_op:
+		li t0, '+'
+		beq s0, t0, op_valida
+		li t0, '-'
+		beq s0, t0, op_valida
+		li t0, '*'
+		beq s0, t0, op_valida
+		li t0, '/'
+		beq s0, t0, op_valida
+
+		# Se não for nenhuma das válidas, imprime mensagem e volta pro loop
+		li a7, 4
+		la a0, prompt_invalid
+		ecall
+
+		li a7, 4
+		la a0, barra_n
+		ecall
+	
+		j padrao_input
+
+op_valida:		
+		# Imprime msg para digitar o número
+		li a7, 4
+		la a0, prompt_num
+		ecall
 		
 		#################################################
 		# Recebe o segundo inteiro, o operando 2        #
@@ -127,6 +156,9 @@ operacao:
 		li t0, '/'
 		beq a0, t0, divisao
 		
+		# Se não achou a operação, é um caractere invalido
+		j caractere_invalido
+		
 		# Operações da função
 soma:		add a0, a1, a2	
 		j operacao_fim
@@ -134,7 +166,13 @@ subtracao:	sub a0, a1, a2
 		j operacao_fim
 multiplicacao:	mul a0, a1, a2	
 		j operacao_fim
-divisao:	div a0, a1, a2  
+divisao:		div a0, a1, a2
+		j operacao_fim
+		
+caractere_invalido:
+		li a7, 4
+		la a0, prompt_invalid
+		ecall
 
 operacao_fim:
 		# Printa o número na tela com \n e retorna
