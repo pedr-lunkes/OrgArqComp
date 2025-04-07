@@ -1,77 +1,93 @@
-		.data
-		.align 2
-cabeca:		.word 0		# Cabeça da lista ligada de inteiros
-		.align 0
-prompt_num: 	.asciz "Digite um número: "
-prompt_char: 	.asciz "Digite um caractere: "
-prompt_no_undo:	.asciz "Não há operações anteriores."
-barra_n:	.asciz "\n"
-		.text
-		.align 2
-		.globl main
-		
-main:
+							#################################################
+		.data					# ÁREA DE DADOS DO CÓDIGO                       #
+							#################################################
+							
+		.align 2				# Interpreta o(s) dado(s) na memória como word
+cabeca:		.word 0					# Cabeça da lista ligada de inteiros
+		.align 0				# Interpreta o(s) dado(s) na memória como byte
+prompt_num: 	.asciz "Digite um número: "		# Mensagem pedindo um número  
+prompt_char: 	.asciz "Digite um caractere: "		# Mensagem pedindo caracter
+prompt_no_undo:	.asciz "Não há operações anteriores."	# Mensagem de ausência de operações anteriores
+barra_n:	.asciz "\n"				# Mensagem de \n
+		.text					# Receber inputs do usuário
+		.align 2				# Interpreta o(s) dado(s) na memória como word
+		.globl main				# Define o início do programa na label 'main'
+							
+							################################################
+main:							# INÍCIO DO PROGRAMA                           #
+							################################################
 primeiro_input:
 		#################################################
 		# Imprime msg para digitar o número             #
 		#################################################
-		li a7, 4			# Serviço 4 = impressão de string
-		la a0, prompt_num		# a0 recebe o endereço da mensagem em que se pede de número
-		ecall				# Syscall = sem retorno
+		li a7, zero, 4			# Serviço 4 = impressão de string
+		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
+		ecall					# Syscall = sem retorno
 		
 		#################################################
 		# Recebe o primeiro inteiro, o operando 1       #
 		#################################################
-		li a7, 5			# Serviço 5 = leitura de inteiro
-		ecall				# Syscall = retorna o inteiro em a0
-		add s1, a0, zero		# s1 recebe o conteúdo do inteiro recebido do usuário
+		li a7, 5				# Serviço 5 = leitura de inteiro
+		ecall					# Syscall = retorna o inteiro em a0
+		add s1, a0, zero			# s1 recebe o conteúdo do inteiro recebido do usuário
 		
 padrao_input:
 		#################################################
 		# Imprime msg para digitar a operação           #
 		#################################################
-		li a7, 4			# Serviço 4 = impressão de string
-		la a0, prompt_char		# a0 recebe o endereço da mensagem em que se pede a operação
-		ecall				# Syscall = sem retorno
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, prompt_char			# a0 recebe o endereço da mensagem em que se pede a operação
+		ecall					# Syscall = sem retorno
 		
 		#################################################
 		# Lê o char de operação                         #
 		#################################################
-		li a7, 12			# Serviço ??
-		ecall				# Syscall = retorna o caracter em a0
-		add s0, a0, zero		# s0 recebe o conteúdo do caracter recebido do usuário
+		li a7, 12				# Serviço ?? (Nunca vi)
+		ecall					# Syscall = retorna o caracter em a0
+		add s0, a0, zero			# s0 recebe o conteúdo do caracter recebido do usuário
 		
 		#################################################
 		# Imprime o \n                                  #
 		#################################################
-		li a7, 4			# Serviço 4 = impressão de string
-		la a0, barra_n			# a0 recebe o endereço da mensagem que contém o \n
-		ecall				# Syscall = sem retorno
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, barra_n				# a0 recebe o endereço da mensagem que contém o \n
+		ecall					# Syscall = sem retorno
 		
-		# Checa se é necessário ler o segundo número e fazer uma operação aritmética para salva no novo_no
-		li t0, 'u'
-		beq s0, t0, undo
-		li t0, 'f'
-		beq s0, t0, encerra
+		#################################################
+		# Faz as comparações do caracter lido, checando #
+		# se é para desfazer ou encerrar o programa     #
+		#################################################
+		li t0, 'u'				# O registrador temporário recebe o caracter 'u'
+		beq s0, t0, undo			# Compara o caracter recebido com 'u', se for igual, avança para label 'undo'
+		li t0, 'f'				# O registrador temporário recebe o caracter 'f'
+		beq s0, t0, encerra			# Compara o caracter recebido com 'f', se for igual, avança para label 'encerra'
 		
-		# Imprime msg para digitar o número
-		li a7, 4
-		la a0, prompt_num
-		ecall
+		#################################################
+		# Imprime msg para digitar um novo número       #
+		#################################################
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
+		ecall					# Syscall = sem retorno
 		
-		# Lê o segundo número
-		li a7, 5
-		ecall
-		mv s2, a0		# s2 = n2
+		#################################################
+		# Recebe o segundo inteiro, o operando 2        #
+		#################################################
+		li a7, 5				# Serviço 5 = leitura de inteiro
+		ecall					# Syscall = retorna o inteiro em a0
+		add s2, a0, zero			# s2 recebe o conteúdo do inteiro recebido do usuário
 		
-		# Resultado para a ser o valor do novo no
-		mv a0, s1
-		jal novo_no
+		#################################################
+		# Chamada da função que armazena os resultados  #
+		# ao longo das operações realizadas		#
+		#################################################
+
+		add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
+		jal novo_no				# Chamada da função que armazena esse valor em um novo nó
 		
 		# Passa os argumentos para operação
-		mv a0, s0
-		mv a1, s1
-		mv a2, s2
+		add a0, s0, zero
+		add a1, s1, zero
+		add a2, s2, zero
 		jal operacao
 		
 		# Passa o último valor como n1
