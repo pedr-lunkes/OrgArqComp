@@ -9,6 +9,7 @@ prompt_num: 	.asciz "Digite um número: "		# Mensagem pedindo um número
 prompt_char: 	.asciz "Digite um caractere: "		# Mensagem pedindo caracter
 prompt_no_undo:	.asciz "Não há operações anteriores."	# Mensagem de ausência de operações anteriores
 prompt_invalid:	.asciz "Operação inválida."		# Mensagem para caso o usuário queira uma operação inválida
+div_zero_warn: 	.asciz "Divisão por 0 não é permitida."	# Mensagem de erro por conta de divisão por 0
 barra_n:	.asciz "\n"				# Mensagem de \n
 		.text					# Receber inputs do usuário
 		.align 2				# Interpreta o(s) dado(s) na memória como word
@@ -112,6 +113,7 @@ op_valida:
 		#################################################
 		# Imprime msg para digitar um novo número       #
 		#################################################
+		
 		li a7, 4				# Serviço 4 = impressão de string
 		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
 		ecall					# Syscall = sem retorno
@@ -119,16 +121,23 @@ op_valida:
 		#################################################
 		# Recebe o segundo inteiro, o operando 2        #
 		#################################################
+		
 		li a7, 5				# Serviço 5 = leitura de inteiro
 		ecall					# Syscall = retorna o inteiro em a0
 		add s2, a0, zero			# s2 recebe o conteúdo do inteiro recebido do usuário
+		
+		#################################################
+		# Antes de salvar na lista, testa divisão por 0 #
+		#################################################
+		li t0, '/'				# O registrador temporário recebe o caracter da divisão
+		beq s0, t0, testa_div_zero		# Se for divisão, deve-se testar a divisão por 0
 		
 		#################################################
 		# Chamada da função que armazena os resultados  #
 		# ao longo das operações realizadas		#
 		#################################################
 
-		add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
+salvar_no:	add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
 		jal novo_no				# Chamada da função que armazena esse valor em um novo nó
 		
 		#################################################
@@ -170,6 +179,30 @@ undo:
 		ecall					# Syscall = imprime, sem retorno
 		
 		j padrao_input				# Dá um jump para receber a próxima operação e operando 2
+		
+#################################################
+# Tratamento para o caso de divisão por 0       #
+#################################################
+testa_div_zero:
+	#################################################
+	# Se s2 não for 0, pode salvar o valor          #
+	#################################################
+	
+	bne s2, zero, salvar_no				# Só continua o código para salvar o nó, caso s2 seja diferente de 0, se for 0, imprime mensagem de erro
+	
+	#################################################
+	# Imprime o warning e pede novos valores        #
+	#################################################
+	
+	li a7, 4					# Serviço 4 = impressão de string
+	la a0, div_zero_warn				# a0 recebe o endereço da string de aviso de divisão por 0
+	ecall						# Syscall = impressão da string, sem retorno
+	
+	la a0, barra_n					# a0 recebe o endereço da string com \n
+	ecall						# Syscall = impressão de string, sem retorno
+	
+	j padrao_input					# Volta para receber novamente o caracter de operação e operando válidos
+	
 		
 #################################################
 # Label que leva ao encerramento do programa    #
@@ -266,7 +299,8 @@ operacao_fim:
 		
 		add a0, t0, zero			# O registrador a0 recebe de volta o resultado obtido da operação
 		jr ra					# Retorna para o local de chamada da função
-		
+
+
 #################################################
 # Funções referentes à linked list, sejam elas: #
 # - novo_no = adiciona um novo nó à lista       #
