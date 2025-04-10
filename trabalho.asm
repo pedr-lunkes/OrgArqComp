@@ -8,7 +8,7 @@ cabeca:		.word 0					# Cabeça da lista ligada de inteiros
 prompt_num: 	.asciz "Digite um número: "		# Mensagem pedindo um número  
 prompt_char: 	.asciz "Digite um caractere: "		# Mensagem pedindo caracter
 prompt_no_undo:	.asciz "Não há operações anteriores."	# Mensagem de ausência de operações anteriores
-prompt_invalid:	.asciz "Operação inválida."
+prompt_invalid:	.asciz "Operação inválida."		# Mensagem para caso o usuário queira uma operação inválida
 barra_n:	.asciz "\n"				# Mensagem de \n
 		.text					# Receber inputs do usuário
 		.align 2				# Interpreta o(s) dado(s) na memória como word
@@ -17,26 +17,35 @@ barra_n:	.asciz "\n"				# Mensagem de \n
 							################################################
 main:							# INÍCIO DO PROGRAMA                           #
 							################################################
-
+#################################################
+# Label referente ao primeiro input             #
+#################################################
 primeiro_input:
 		#################################################
 		# Imprime msg para digitar o número             #
 		#################################################
-		li a7, 4			# Serviço 4 = impressão de string
+		
+		li a7, 4				# Serviço 4 = impressão de string
 		la a0, prompt_num			# a0 recebe o endereço da mensagem em que se pede de número
 		ecall					# Syscall = sem retorno
 		
 		#################################################
 		# Recebe o primeiro inteiro, o operando 1       #
 		#################################################
+		
 		li a7, 5				# Serviço 5 = leitura de inteiro
 		ecall					# Syscall = retorna o inteiro em a0
 		add s1, a0, zero			# s1 recebe o conteúdo do inteiro recebido do usuário
-		
+
+#################################################
+# Label referente ao input de operação e novo   #
+# operando                                      #
+#################################################
 padrao_input:
 		#################################################
 		# Imprime msg para digitar a operação           #
 		#################################################
+		
 		li a7, 4				# Serviço 4 = impressão de string
 		la a0, prompt_char			# a0 recebe o endereço da mensagem em que se pede a operação
 		ecall					# Syscall = sem retorno
@@ -44,13 +53,15 @@ padrao_input:
 		#################################################
 		# Lê o char de operação                         #
 		#################################################
-		li a7, 12				# Serviço ?? (Nunca vi)
+		
+		li a7, 12				# Serviço 12 = leitura de char
 		ecall					# Syscall = retorna o caracter em a0
 		add s0, a0, zero			# s0 recebe o conteúdo do caracter recebido do usuário
 		
 		#################################################
 		# Imprime o \n                                  #
 		#################################################
+		
 		li a7, 4				# Serviço 4 = impressão de string
 		la a0, barra_n				# a0 recebe o endereço da mensagem que contém o \n
 		ecall					# Syscall = sem retorno
@@ -59,33 +70,44 @@ padrao_input:
 		# Faz as comparações do caracter lido, checando #
 		# se é para desfazer ou encerrar o programa     #
 		#################################################
+		
 		li t0, 'u'				# O registrador temporário recebe o caracter 'u'
 		beq s0, t0, undo			# Compara o caracter recebido com 'u', se for igual, avança para label 'undo'
 		li t0, 'f'				# O registrador temporário recebe o caracter 'f'
 		beq s0, t0, encerra			# Compara o caracter recebido com 'f', se for igual, avança para label 'encerra'
 		
-		#verifica se eh um caractere valido
-		verifica_op:
-		li t0, '+'
-		beq s0, t0, op_valida
-		li t0, '-'
-		beq s0, t0, op_valida
-		li t0, '*'
-		beq s0, t0, op_valida
-		li t0, '/'
-		beq s0, t0, op_valida
+#################################################
+# Label referente à verificação quanto à        #
+# validade da operação desejada                 #
+#################################################
+verifica_op:
+		li t0, '+'				# t0 recebe o caracter '+'
+		beq s0, t0, op_valida			# Se a operação desejada for '+', vai na label para realizá-la
+		li t0, '-'				# t0 recebe o caracter '-'
+		beq s0, t0, op_valida			# Se a operação desejada for '-', vai na label para realizá-la
+		li t0, '*'				# t0 recebe o caracter '*'
+		beq s0, t0, op_valida			# Se a operação desejada for '*', vai na label para realizá-la
+		li t0, '/'				# t0 recebe o caracter '/'
+		beq s0, t0, op_valida			# Se a operação desejada for '/', vai na label para realizá-la
 
-		# Se não for nenhuma das válidas, imprime mensagem e volta pro loop
-		li a7, 4
-		la a0, prompt_invalid
-		ecall
+		#################################################
+		# Se for inválida, imprime uma mensagem e volta #
+		# para o loop                                   #
+		#################################################
+		
+		li a7, 4				# Serviço 4 = imprimir string
+		la a0, prompt_invalid			# a0 recebe o endereço da mensagem para operação inválida
+		ecall					# Syscall = imprime, sem retorno
 
-		li a7, 4
-		la a0, barra_n
-		ecall
+		li a7, 4				# Serviço 4 = imprimir string
+		la a0, barra_n				# a0 recebe o endereço da mensagem de \n
+		ecall					# Syscall = imprime, sem um retorno
 	
-		j padrao_input
-
+		j padrao_input				# Dá um jump para receber novamente o caracter da operação 
+		
+#################################################
+# Label referente a operação válida             #
+#################################################
 op_valida:		
 		#################################################
 		# Imprime msg para digitar um novo número       #
@@ -109,126 +131,250 @@ op_valida:
 		add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
 		jal novo_no				# Chamada da função que armazena esse valor em um novo nó
 		
-		# Passa os argumentos para operação
-		add a0, s0, zero
-		add a1, s1, zero
-		add a2, s2, zero
-		jal operacao
+		#################################################
+		# Passa os argumentos para a operação           #
+		#################################################
 		
-		# Passa o último valor como n1
-		mv s1, a0
-		j padrao_input
+		add a0, s0, zero			# a0 recebe o conteúdo de s0, a operação
+		add a1, s1, zero			# a1 recebe o conteúdo de s1, o operando 1
+		add a2, s2, zero			# a2 recebe o conteúdo de s2, o operando 2
+		jal operacao				# Chama a função para efetuar a operação
 		
+		#################################################
+		# Guarda o resultado e volta ao loop            #
+		#################################################
+		
+		add s1, a0, zero			# s1, que representa o operando 1, recebe o resultado obtido da operação
+		j padrao_input				# Dá um jump para receber a próxima operação e operando 2
+
+#################################################
+# Label referente ao algoritmo para desfazer a  #
+# operação, voltando ao valor anterior          #
+#################################################
 undo:
-		# Remove o no e printa o seu valor
-		jal remove_no
-		li a7, 1
-		ecall
+		#################################################
+		# Remoção do nó da lista encadeada              #
+		#################################################
 		
-		# Passa o último valor como n1
-		mv s1, a0
+		jal remove_no				# Chama a função que remove o nó e guarda em a0 o novo último elemento da lista encadeada
+		li a7, 1				# Serviço 1 = imprimir inteiro
+		ecall					# Syscall = imprime o inteiro, sem retorno
+		add s1, a0, zero			# s1, que representa o operando 1, é atualizado com o valor anterior obtido
 		
-		# Imprime /n
-		li a7, 4
-		la a0, barra_n
-		ecall
+		#################################################
+		# Impressão do \n e volta ao loop               #
+		#################################################
 		
-		j padrao_input
+		li a7, 4				# Serviço 4 = imprimir string
+		la a0, barra_n				# a0 recebe o endereço da mensagem com o \n
+		ecall					# Syscall = imprime, sem retorno
+		
+		j padrao_input				# Dá um jump para receber a próxima operação e operando 2
+		
+#################################################
+# Label que leva ao encerramento do programa    #
+#################################################
 encerra:
-		li a7, 10
-		ecall
+		li a7, 10				# Serviço 10 = encerra o programa
+		ecall					# Syscall = finaliza, indicando que deu tudo certo
 		
 # Função operação: faz alguma operação aritmética da calculadora
 # Argumentos: a0 -> op; a1 -> n1; a2 -> n2
 # Retorno: a0 -> res
+
+#################################################
+# Função 'operação', a qual determina a operação#
+# aritmética a ser realizada, fazendo um desvio #
+# para a respectiva operação.                   #
+#################################################
+# ARGUMENTOS:
+# a0 = caracter da operação
+# a1 = inteiro, operando1
+# a2 = inteiro, operando2
+# RETORNOS:
+# a0 = resultado obtido da operação
+# Os demais argumentos permanecem com os
+# respectivos valores originalmente recebidos
 operacao:
-		# Switch case com a determinada operação
-		li t0, '+'
-		beq a0, t0, soma
-		li t0, '-'
-		beq a0, t0, subtracao
-		li t0, '*'
-		beq, a0, t0, multiplicacao
-		li t0, '/'
-		beq a0, t0, divisao
+		#################################################
+		# Switch case com a determinada operação        #
+		#################################################
 		
-		# Se não achou a operação, é um caractere invalido
-		j caractere_invalido
+		li t0, '+'				# O registrador temporário recebe o char '+', indicando soma
+		beq a0, t0, soma			# Compara o caracter de operação recebido do usuário com o temporário. Se for igual, desvia para o label da respectiva operação
+		li t0, '-'				# O registrador temporário recebe o char '-', indicando subtração
+		beq a0, t0, subtracao			# Compara o caracter de operação recebido do usuário com o temporário. Se for igual, desvia para o label da respectiva operação	
+		li t0, '*'				# O registrador temporário recebe o char '*', indicando multiplicação
+		beq, a0, t0, multiplicacao		# Compara o caracter de operação recebido do usuário com o temporário. Se for igual, desvia para o label da respectiva operação		
+		li t0, '/'				# O registrador temporário recebe o char '/', indicando divisão inteira
+		beq a0, t0, divisao			# Compara o caracter de operação recebido do usuário com o temporário. Se for igual, desvia para o label da respectiva operação
 		
-		# Operações da função
-soma:		add a0, a1, a2	
-		j operacao_fim
-subtracao:	sub a0, a1, a2	
-		j operacao_fim
-multiplicacao:	mul a0, a1, a2	
-		j operacao_fim
-divisao:		div a0, a1, a2
-		j operacao_fim
 		
+		j caractere_invalido			# Se não achou a operação, é um caractere invalido, vai para o label desse tratamento
+		
+#################################################
+# Label para a operação soma de a1 e a2         #
+# a0 recebe o resultado da operação.            #
+#################################################
+soma:		
+		add a0, a1, a2				# Soma os operando1 e operando2, salvos em a1 e a2, armazenando em a0 o resultado
+		j operacao_fim				# Dá um jump para o pós-realização da operação
+		
+#################################################
+# Label para a operação subtração de a1 e a2    #
+# a0 recebe o resultado da operação.            #
+#################################################
+subtracao:	
+		sub a0, a1, a2				# Subtrai do operando1, o operando2, salvos em a1 e a2, armazenando em a0 o resultado
+		j operacao_fim				# Dá um jump para o pós-realização da operação
+		
+#################################################
+# Label para a operação multiplicação de a1 e a2#
+# a0 recebe o resultado da operação.            #
+#################################################
+multiplicacao:	
+		mul a0, a1, a2				# Multiplica o operando1 com o operando2, salvos em a1 e a2, armazendo em a0 o resultado
+		j operacao_fim				# Dá um jump para o pós-realização da operação
+		
+#################################################
+# Label para a operação divisão de a1 e a2      #
+# a0 recene o resultado da operação.            #
+#################################################
+divisao:	
+		div a0, a1, a2				# Divisão inteira do operando1 pelo operando2, salvos em a1 e a2, armazenando em a0 o resultado
+		j operacao_fim				# Dá um jump para o pós-realização da operação
+
+#################################################
+# Tratamento para o caracter inválido           #
+#################################################
 caractere_invalido:
-		li a7, 4
-		la a0, prompt_invalid
-		ecall
-
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, prompt_invalid			# a0 recebe o endereço da string de caracter de operação inválido
+		ecall					# Syscall = impressão da mensagem, mas sem retorno
+		
+#################################################
+# Pós-realizada a operação, imprime o resultado #
+#################################################
 operacao_fim:
-		# Printa o número na tela com \n e retorna
-		li a7, 1
-		ecall
+		li a7, 1				# Serviço 1 = impressão de inteiro, a0 é o argumento
+		ecall					# Syscall = impressão, mas sem retorno
 		
-		mv t0, a0	# Salva o número no t0 para poder usar a0
-		li a7, 4
-		la a0, barra_n
-		ecall
+		add t0, a0, zero			# Salva o número no t0 para poder usar a0, no argumento da syscall
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, barra_n				# a0 recebe o endereço da string "\n"
+		ecall					# Syscall = impressão da string, sem retorno
 		
-		mv a0, t0	# Move para o registrador de retorno novamente 
-		jr ra
+		add a0, t0, zero			# O registrador a0 recebe de volta o resultado obtido da operação
+		jr ra					# Retorna para o local de chamada da função
 		
-#######################
-# Funções referentes a linked list
+#################################################
+# Funções referentes à linked list, sejam elas: #
+# - novo_no = adiciona um novo nó à lista       #
+# - remove_no = remove o último nó adicionado   #
+# na lista e retorna o valor inteiro nele       #
+# armazenado.                                   #
+# - remove_no_except = tratamento do caso em    #
+# que não há mais elementos na lista.           #    
+#################################################
 
-# Função novo_no: adiciona um novo no na linked list.
-# Argumentos: a0 -> valor
-# Retorno: N/A
+#################################################
+# Função 'novo_no' cria um nó com o resultado   #   
+# da operação e adiciona-o à linked list        #
+#################################################
+# ARGUMENTOS:.
+# a0 = valor do resultado, a ser guardado no nó
+# da lista
+# RETORNOS: 
+# N/A
+# O argumento permanece com o valor originalmente
+# recebido
 novo_no:
-		mv t0, a0  	# Salva o valor na variavel temporaria t0
-		li a0, 8  	# Aloca o tamanho da struct NO na heap
-		li a7, 9  	# Faz a alocação de memória
-		ecall
+		#################################################
+		# Alocação de memória                           #
+		#################################################
+		
+		add t0, a0, zero		  	# Salva o valor na variavel temporária t0
+		li a0, 8  				# a0 recebe o tamanho da struct NO na heap
+		li a7, 9  				# Serviço 9 = alocação de memória
+		ecall					# Syscall = alocação de memória na heap, de tamanho a0, retorna o endereço da memória alocada em a0
 	
-		mv t1, a0  	# Salva o valor do endereco alocado na variavel temporaria t1
-		lw t2, cabeca  	# Carrega o endereco do NO da cabeca da lista em t2
+		
+		add t1, a0, zero 			# Salva o valor do endereço alocado na variável temporária t1
+		lw t2, cabeca  				# Carrega o endereço do NO da cabeça da lista em t2
+		
+		#################################################
+		# Escrita na memória memória alocada            #
+		# Primeiros 4 bytes = endereço do nó anterior   #
+		# Últimos 4 bytes = o valor do resultado        #
+		#################################################
+		
+		sw t2, 0(t1) 				# Coloca nos primeiros 4 bytes o ponteiros para o NO anterior
+		sw t0, 4(t1)  				# Coloca nos últimos 4 bytes o valor especificado pelo usuário
 	
-		sw t2, 0(t1) 	# Coloca nos primeiros 4 bytes o ponteiros para o NO anterior
-		sw t0, 4(t1)  	# Coloca nos ultimos 4 bytes o valor especificado pelo usuario
+		#################################################
+		# Atualiza o valor do nó cabeça com o nó novo e #
+		# retorna para a chamada da função              #
+		#################################################
+		
+		la t3, cabeca  				# Carrega o endereço do ponteiro cabeça da lista em t3
+		sw t1, 0(t3) 				# Atualiza o valor da cabeca, com o novo nó
 	
-		la t3, cabeca  	# Carrega o endereco do ponteiro cabeca da lista em t3
-		sw t1, 0(t3) 	# Atualiza o valor da cabeca
-	
-		mv a0, t0	# Restaura o valor de a0
-		jr ra
+		mv a0, t0				# Restaura o valor de a0, com o valor original
+		jr ra					# Volta para o local da chamada da função
 
-# Função remove_no: remove um novo no da linked list e retorna seu valor
-# Argumentos: N/A
-# Retorno: a0 -> valor do ultimo no
+#################################################
+# A função 'remove_no' remove o último nó da    #
+# lista, retornando o valor inteiro desse nó    #
+#################################################
+# ARGUMENTOS:.
+# N/A
+# RETORNOS: 
+# a0 = valor do último no, que estava na lista
 remove_no:
-		lw t0, cabeca  	# Carrega o endereco do NO da cabeca da lista, que sera removido, em t0
-		beq t0, zero, remove_no_except # Caso seja o primeiro NO, retorna 0
+		#################################################
+		# Recebe o endereço do nó cabeça (último nó da  #
+		# lista), tratando caso a lista seja vazia      #
+		#################################################
+		
+		lw t0, cabeca  				# Carrega o endereco do NO da cabeca da lista, que será removido, em t0
+		beq t0, zero, remove_no_except 		# Caso seja o primeiro NO, retorna 0
 
-		lw t1, 0(t0)  	# Carrega o endereco do proximo NO da lista em t1
-		lw a0, 4(t0)  	# Carrega o valor do NO removido em a0
-	
-		la t3, cabeca 	# Carrega o endereco do ponteiro cabeca da lista em t3
-		sw t1, 0(t3)  	# Atualiza o valor da cabeca
-		jr ra
+		#################################################
+		# Lê as informações armazenadas na struct NO:   #
+		# - 4 primeiros bytes = endereço do nó anteiror #
+		# - 4 últimos bytes = valor armazenado no NO,   #
+		# guardando-o em a0.                            #
+		#################################################
+		
+		lw t1, 0(t0)  				# Carrega o endereço do NO anterior da lista (penúltimo) em t1
+		lw a0, 4(t0)  				# Carrega o valor do NO removido em a0
+		
+		#################################################
+		# Atualiza a cabeça da lista e retorna          #
+		#################################################
+		
+		la t3, cabeca 				# Carrega o endereco do ponteiro cabeca da lista em t3
+		sw t1, 0(t3)  				# Atualiza o valor da cabeca com o que era o penúltimo nó (agora, passa a ser o último)
+		jr ra					# Retorna para o local da chamada da função
+		
+#################################################
+# A função 'remove_no_except' faz o tratamento  #
+# para quando a lista não possui mais elementos #
+#################################################
+# ARGUMENTOS:.
+# N/A
+# RETORNOS: 
+# a0 = valor do último nó, que estava na lista
 remove_no_except:
-		li a7, 4
-		la a0, prompt_no_undo
-		ecall
+	
+		li a7, 4				# Serviço 4 = impressão de string
+		la a0, prompt_no_undo			# a0 recebe o endereço da string de que a lista de resultados está vazia
+		ecall					# Syscall = impressão, mas sem retorno
 		
-		la a0, barra_n
-		ecall
+		la a0, barra_n				# a0 recebe o endereço da string com \n
+		ecall					# Syscall = impressão, mas sem retorno
 		
-		li a0, 0
-		jr ra
+		li a0, 0				# Por padrão, deixa a0 como 0, assim, imprime-se 0, como resultado padrão para essa situação
+		jr ra					# Retorna para o local de chamada da função
 
 		
