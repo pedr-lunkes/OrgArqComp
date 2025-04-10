@@ -132,12 +132,17 @@ op_valida:
 		li t0, '/'				# O registrador temporário recebe o caracter da divisão
 		beq s0, t0, testa_div_zero		# Se for divisão, deve-se testar a divisão por 0
 		
+
+#################################################
+# Label para voltar se a divisão não for por 0  #
+#################################################
+salvar_no:	
 		#################################################
 		# Chamada da função que armazena os resultados  #
 		# ao longo das operações realizadas		#
 		#################################################
-
-salvar_no:	add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
+		
+		add a0, s1, zero			# a0 recebe o registrador em que estava o primeiro operando e no qual os resultados se acumulam
 		jal novo_no				# Chamada da função que armazena esse valor em um novo nó
 		
 		#################################################
@@ -184,6 +189,7 @@ undo:
 # Tratamento para o caso de divisão por 0       #
 #################################################
 testa_div_zero:
+
 	#################################################
 	# Se s2 não for 0, pode salvar o valor          #
 	#################################################
